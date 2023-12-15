@@ -1,23 +1,22 @@
 REPORT z_editable_alv_grid.
 
-
 TYPES BEGIN OF y_orders_c.
 
 TYPES prod    TYPE ztable_02_prod2-produto.
 TYPES desc    TYPE ztable_02_prod2-desc_produto.
 TYPES price   TYPE ztable_02_prod2-preco.
-TYPES price2  TYPE ztable_02_prod2-preco.
+TYPES price2  TYPE ztable_02_prod2-preco. "VARIÁVEL EDITÁVEL
 TYPES celltab TYPE lvc_t_styl.
 
 TYPES END OF y_orders_c.
 
-DATA: lo_grid     TYPE REF TO cl_gui_alv_grid,
-      lt_fieldcat TYPE lvc_t_fcat,
+DATA: lo_grid     TYPE REF TO cl_gui_alv_grid, "ESTRUTUR CONTENDO O CATÁLOGO DO ALV
+      lt_fieldcat TYPE lvc_t_fcat, "ESTRUTURA CONTENDO O CATÁLOGO DO FIELDCAT
       lt_data     TYPE TABLE OF y_orders_c.
 
-DATA: gs_alv_layout TYPE lvc_s_layo.
+DATA: gs_alv_layout TYPE lvc_s_layo.  "ESTRUTURA DE LAYOUT PRINCIPAL
 
-DATA: e_cell_type   TYPE lvc_s_styl.
+DATA: e_cell_type   TYPE lvc_s_styl. "ESTRUTURA DE ESTILOS DO LAYOUT
 
 DATA: e_orders_c    TYPE y_orders_c.
 
@@ -35,38 +34,38 @@ MODULE show_orders OUTPUT.
     "CATÁLOGO DOS CAMPOS
     PERFORM f_fieldcat USING lt_data[] CHANGING lt_fieldcat.
 
-    LOOP AT lt_fieldcat  ASSIGNING FIELD-SYMBOL(<fs_fieldcat>).
-
+    LOOP AT lt_fieldcat  ASSIGNING FIELD-SYMBOL(<fs_fieldcat>). "PARECIDO COM O INTO O ASSIGNING , FIELD-SYMBOL CRIA UMA VARIAVÉL CORRESPONDENDE A VARIÁVEL
+      "NÃO SOU OBRIGADO A FAZER ESSE WHEN, SÓ É NECESSÁRIO SE EU QUISER MUDAR O NOME DA COLUNA, PORQUE VEM O NOME DO ELEMENTO DE DADOS POR PADRÃO
       CASE <fs_fieldcat>-fieldname.
         WHEN 'PROD'.
           <fs_fieldcat>-coltext = 'PRODUTO'.
 
         WHEN 'DSEC'.
-          <fs_fieldcat>-coltext = 'DESCRIÇÃO DO PRODUTO'.
+          <fs_fieldcat>-coltext = 'DESCRIÇÃO DO PRODUTO'.  "COLOCA O NOME CORRESPONDE DA COLUNA
 
         WHEN 'PRICE'.
           <fs_fieldcat>-coltext = 'PREÇO ORIGINAL'.
 
         WHEN 'PRICE2'.
-          <fs_fieldcat>-edit = 'X'. "SET FIELD TO EDITABLE
+          <fs_fieldcat>-edit = 'X'. "COLOCA UM CAMPO PARA EDITAR
           <fs_fieldcat>-coltext = 'NOVO PREÇO'.
       ENDCASE.
     ENDLOOP.
 
-      "CONFIGURAÇÃO DE LAYOUT
+      "CONFIGURAÇÃO DE LAYOUT DA TELA
       CLEAR gs_alv_layout.
-      MOVE abap_true TO: gs_alv_layout-cwidth_opt,
-                         gs_alv_layout-zebra,
-                         gs_alv_layout-col_opt.
+      MOVE abap_true TO: gs_alv_layout-cwidth_opt, "MEXE NO TAMANHO DA COLUNA CONFORME A QUANTIDADE DE CARACTER DA INFORMAÇÃO
+                         gs_alv_layout-zebra, " "DEIXA ZEBRADO
+                         gs_alv_layout-col_opt. "OTIMIZAÇÃO DE COLUNA EM RELAÇÃO AO SEU TAMANHO
       gs_alv_layout-stylefname = 'CELLTAB'.
 
 
-      "COLOCAR DADOS
+      "COLOCA DADOS PADRÕES DA TABELA
       e_orders_c-prod = '1'.
       e_orders_c-desc = 'PRESUNTO'.
       e_orders_c-price = '200'.
       e_orders_c-price2 = '2'.
-      APPEND e_orders_c TO lt_data.
+      APPEND e_orders_c TO lt_data. "PREENCHE A VARIÁVEL TYPES
 
       CLEAR e_orders_c-prod.
       e_orders_c-prod = '2'.
@@ -98,23 +97,23 @@ MODULE show_orders OUTPUT.
 
       CREATE OBJECT lo_grid
         EXPORTING
-          i_parent = cl_gui_container=>screen0.
+          i_parent = cl_gui_container=>screen0. "TIPO DE TELA
 
-      CALL METHOD  lo_grid->set_table_for_first_display
+      CALL METHOD  lo_grid->set_table_for_first_display "CHAMA A TELA INICIAL
         EXPORTING
-          i_structure_name = 'LT_DATA'
-          is_layout        = gs_alv_layout
+          i_structure_name = 'LT_DATA' "NOME DA TELA CRIADA NO LAYOUT
+          is_layout        = gs_alv_layout "VARIÁVEL GLOBAL DA ESTRUTURA
         CHANGING
-          it_outtab        = lt_data
-          it_fieldcatalog  = lt_fieldcat.
+          it_outtab        = lt_data "VARIÁVEL GLOBAL DOS TYPES
+          it_fieldcatalog  = lt_fieldcat."VARIÉVEL GLOBAL DO FIELDCAT
 
-      CALL METHOD lo_grid->register_edit_event
+      CALL METHOD lo_grid->register_edit_event "MÉTODO DE EDIÇÃO
         EXPORTING
-          i_event_id = cl_gui_alv_grid=>mc_evt_enter
+          i_event_id = cl_gui_alv_grid=>mc_evt_enter "EVENTO DE ENTRADA DE DADOS
         EXCEPTIONS
           error  = 1
           OTHERS = 2.
-      IF sy-subrc <> 0.
+      IF sy-subrc <> 0. "POSSÍVEIS ERROS
       MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
         WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
     ENDIF.
@@ -132,8 +131,8 @@ ENDMODULE.
 *       text
 *----------------------------------------------------------------------*
 MODULE status_0100 OUTPUT.
-  SET PF-STATUS 'STATUS100'.
-*  SET TITLEBAR 'xxx'.
+  SET PF-STATUS 'STATUS100'. "SET RESPONSÁVEL PELA INTERAÇÃO DA BARRA DE ATIVIDADES
+  SET TITLEBAR 'EDIT_PROD02'. "TITÚLO DA BARRA
 ENDMODULE.
 
 
@@ -144,7 +143,7 @@ ENDMODULE.
 *----------------------------------------------------------------------*
 MODULE user_command_0100 INPUT.
 
-  CASE sy-ucomm.
+  CASE sy-ucomm. "ACÃO QUE ATIVA QUANDO CLICA EM UM BOTÃO
     WHEN 'BACK' OR 'EXIT' OR 'CANCEL'.
       LEAVE TO SCREEN '0'.
     WHEN 'SWITCH'.
@@ -189,16 +188,16 @@ ENDFORM.
 
 FORM f_switch_edit_mode .
 
-  IF lo_grid->is_ready_for_input( ) EQ 0.
+  IF lo_grid->is_ready_for_input( ) EQ 0. "PREPARA A ENTARDA DE DADOS VIA TECLADO
 
-  CALL METHOD lo_grid->set_ready_for_input
+  CALL METHOD lo_grid->set_ready_for_input "COLOCA A ENTRADA DE DADOS VIA TECLADO
     EXPORTING
-      i_ready_for_input = 1.
+      i_ready_for_input = 1. "SIM
 
   ELSE.
     CALL METHOD lo_grid->set_ready_for_input
       EXPORTING
-       i_ready_for_input = 0.
+       i_ready_for_input = 0. "NÃO
   ENDIF.
 
 ENDFORM.
@@ -209,16 +208,16 @@ ENDFORM.
 *&---------------------------------------------------------------------*
 FORM f_update_grid USING p_grid TYPE REF TO cl_gui_alv_grid.
 
-  DATA vl_stable TYPE lvc_s_stbl.
+  DATA vl_stable TYPE lvc_s_stbl."ESTRUTURA CONTENDO O REFRESH DAS COLUNAS E LINHAS
 
-  CHECK p_grid IS BOUND.
+  CHECK p_grid IS BOUND. "CHECA O INSTANCIAMENTO DO ALV
 
   CLEAR vl_stable.
-  MOVE abap_true TO:
+  MOVE abap_true TO: "SE FOR VERDADE, ELE MUDA A COLUNA E AS LINHAS
     vl_stable-col,
     vl_stable-row.
 
-  CALL METHOD p_grid->refresh_table_display
+  CALL METHOD p_grid->refresh_table_display "ATUALIZA A TELA
     EXPORTING
       is_stable = vl_stable
     EXCEPTIONS
